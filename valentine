@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Для мого чуда 💘</title>
+
+  <!-- Preconnect improves font loading performance (reduced DNS/TLS overhead). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       Design tokens (single source of truth)
+       - Colors, radii, shadows, typography
+       - Keeps styling consistent & easier to maintain
+    ========================================================= */
+    :root{
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+
+      --shadow-1: 0 6px 18px rgba(0,0,0,.10);
+      --shadow-2: 0 18px 60px rgba(0,0,0,.18);
+
+      --text: #111827;
+      --muted:#6B7280;
+      --surface: rgba(255,255,255,.82);
+
+      --primary:#3B82F6;
+      --primary-press:#2563EB;
+      --secondary:#E5E7EB;
+      --secondary-press:#D1D5DB;
+
+      --bg-main-1:#4F46E5;
+      --bg-main-2:#A855F7;
+
+      --bg-orange-1:#FFB36A;
+      --bg-orange-2:#FF7A59;
+
+      --darkOnOrange: rgba(17,24,39,.92);
+
+      --font-ui: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+
+      /* Text color used on dark / vibrant backgrounds */
+      --whiteOnMain: rgba(255,255,255,.96);
+    }
+
+    /* Basic reset & layout scaffolding */
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      display:grid;
+      place-items:center;
+      color:var(--text);
+      font-family: var(--font-ui);
+      overflow-x:hidden;
+    }
+
+    /* Main background theme (purple) */
+    body.bg-main{
+      background:
+        radial-gradient(1200px 700px at 20% 20%, rgba(255,255,255,.18), transparent 55%),
+        radial-gradient(900px 600px at 80% 30%, rgba(255,255,255,.12), transparent 60%),
+        linear-gradient(135deg, var(--bg-main-1), var(--bg-main-2));
+    }
+
+    /* Alternative background theme (orange) */
+    body.bg-orange{
+      background:
+        radial-gradient(900px 600px at 25% 25%, rgba(255,255,255,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg-orange-1), var(--bg-orange-2));
+    }
+
+    /* Centered container for card-based screen */
+    .wrap{
+      width:min(920px, 92vw);
+      padding: 22px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Glassmorphism card */
+    .card{
+      width:100%;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-2);
+      padding: clamp(24px, 4vw, 44px);
+      text-align:center;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: relative;
+      overflow: hidden;
+      transform: translateZ(0); /* helps with GPU compositing on some devices */
+    }
+
+    /* Subtle highlight layer */
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, rgba(255,255,255,.32), transparent 35%);
+      pointer-events:none;
+      z-index: 0;
+    }
+
+    /* Utility */
+    .hidden{ display:none; }
+
+    .heroEmoji{
+      font-size: 44px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.12));
+    }
+
+    h1{
+      margin: 6px 0 10px;
+      font-size: clamp(32px, 4vw, 58px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-weight: 900;
+    }
+
+    .subtitle{
+      margin: 0 0 28px;
+      font-size: clamp(16px, 2.1vw, 22px);
+      color: rgba(17,24,39,.82);
+      font-weight: 700;
+    }
+
+    /* Button row acts as a bounded "play area" for the moving button */
+    .btnRow{
+      position: relative;
+      width: min(560px, 92%);
+      height: 72px;
+      margin: 0 auto;
+      touch-action: manipulation;
+    }
+
+    .m-btn{
+      border: 0;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: var(--shadow-1);
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+      outline: none;
+      position: relative;
+      overflow: hidden; /* required for ripple clipping */
+    }
+
+    .m-btn:active{ transform: scale(.98); }
+    .m-btn:focus-visible{ box-shadow: 0 0 0 4px rgba(59,130,246,.25), var(--shadow-1); }
+
+    /* Primary CTA */
+    #yesBtn{
+      position:absolute; left:0; top:0;
+      width: 48%;
+      background: var(--primary);
+      color: #fff;
+    }
+    #yesBtn:hover{ background: #4F8DFF; }
+    #yesBtn:active{ background: var(--primary-press); }
+
+    /* Secondary button (interactive "escape" behavior in JS) */
+    #noBtn{
+      position:absolute; right:0; top:0;
+      width: 48%;
+      background: var(--secondary);
+      color: #111827;
+    }
+    #noBtn:hover{ background:#EEF2F7; }
+    #noBtn:active{ background: var(--secondary-press); }
+
+    /* Button ripple feedback */
+    .ripple{
+      position:absolute;
+      border-radius: 999px;
+      transform: scale(0);
+      opacity: .35;
+      pointer-events:none;
+      animation: ripple .55s ease-out forwards;
+      background: currentColor;
+      mix-blend-mode: multiply;
+    }
+    #yesBtn .ripple{ background: rgba(255,255,255,.9); opacity: .22; mix-blend-mode: normal; }
+    @keyframes ripple{ to{ transform: scale(1); opacity: 0; } }
+
+    /* Simple entrance animation for screen transitions */
+    .fadeIn{ animation: fadeIn .22s ease-out both; }
+    @keyframes fadeIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to  { opacity:1; transform: translateY(0); }
+    }
+
+    /* Respect reduced-motion user preference */
+    @media (prefers-reduced-motion: reduce){
+      .fadeIn{ animation:none; }
+      .m-btn{ transition:none; }
+      .ripple{ display:none; }
+    }
+
+    /* Confetti overlay (canvas) */
+    #confetti{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10; /* above everything */
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    #confetti.on{ opacity: 1; }
+
+    /* Fullscreen screens (used for the "No" flow) */
+    .full{
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 6;
+    }
+    .full.hidden{ display:none; }
+
+    /* Default text style for fullscreen (Screen3 uses orange background + dark text) */
+    .full .fullInner{
+      width: min(980px, 94vw);
+      color: var(--darkOnOrange);
+      text-shadow: none;
+    }
+
+    .fullTitle{
+      margin: 0;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      font-size: clamp(46px, 6.6vw, 86px);
+      line-height: 1.0;
+    }
+    .fullSub{
+      margin: 14px 0 0;
+      font-weight: 900;
+      font-size: clamp(26px, 3.6vw, 44px);
+      line-height: 1.12;
+    }
+
+    /* Emoji rows used in fullscreen screens */
+    .emoRowTop{
+      font-size: clamp(60px, 8vw, 102px);
+      margin-bottom: 16px;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.18));
+      white-space: nowrap;
+    }
+    .emoRowBottom{
+      margin-top: 18px;
+      font-size: clamp(58px, 7vw, 98px);
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.18));
+      white-space: nowrap;
+    }
+
+    /* Decorative floating emojis */
+    .floatEmo{
+      position: absolute;
+      font-size: clamp(26px, 4vw, 44px);
+      opacity: .95;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.18));
+      animation: drift 6.5s ease-in-out infinite;
+      user-select: none;
+      pointer-events: none;
+    }
+    .floatEmo.e1{ left: 8%;  top: 16%; animation-delay: .0s; }
+    .floatEmo.e2{ right: 10%; top: 18%; animation-delay: .7s; }
+    .floatEmo.e3{ left: 12%; bottom: 16%; animation-delay: 1.1s; }
+    .floatEmo.e4{ right: 12%; bottom: 14%; animation-delay: 1.7s; }
+
+    @keyframes drift{
+      0%,100%{ transform: translateY(0) rotate(0deg); }
+      50%{ transform: translateY(-18px) rotate(4deg); }
+    }
+
+    /* Keep long phrase readable on narrow screens */
+    .nowrap{ white-space: nowrap; }
+    @media (max-width: 560px){
+      .nowrap{ white-space: normal; }
+    }
+
+    /* Screen2: purple background + white text for contrast */
+    #screen2Full{
+      background:
+        radial-gradient(1200px 700px at 20% 20%, rgba(255,255,255,.18), transparent 55%),
+        radial-gradient(900px 600px at 80% 30%, rgba(255,255,255,.12), transparent 60%),
+        linear-gradient(135deg, var(--bg-main-1), var(--bg-main-2));
+    }
+    #screen2Full .fullInner{
+      color: var(--whiteOnMain);
+      text-shadow: 0 14px 34px rgba(0,0,0,.32);
+    }
+    #screen2Full .emoRowTop,
+    #screen2Full .emoRowBottom,
+    #screen2Full .floatEmo{
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.28));
+    }
+
+    /* =========================================================
+       Fullscreen "YES" screen:
+       - Purple background across the entire viewport
+       - Emoji layer behind the glass card (not inside the card)
+    ========================================================= */
+    #yesFull{
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      z-index: 6; /* below confetti */
+      background:
+        radial-gradient(1200px 700px at 20% 20%, rgba(255,255,255,.18), transparent 55%),
+        radial-gradient(900px 600px at 80% 30%, rgba(255,255,255,.12), transparent 60%),
+        linear-gradient(135deg, var(--bg-main-1), var(--bg-main-2));
+    }
+    #yesFull.hidden{ display:none; }
+
+    /* Decorative emoji layer (purely visual, no interaction) */
+    #yesFull .yesEmoBg{
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: .28;
+      font-size: clamp(18px, 3.4vw, 44px);
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,.22));
+    }
+
+    /* Each emoji uses CSS variables for rotation/opacity/duration */
+    #yesFull .yesEmoBg span{
+      position: absolute;
+      user-select: none;
+      transform: rotate(var(--r, 0deg));
+      opacity: var(--o, .9);
+      animation: yesFloat var(--d, 8.4s) ease-in-out infinite;
+    }
+
+    @keyframes yesFloat{
+      0%,100%{ transform: translateY(0) rotate(var(--r, 0deg)); }
+      50%{ transform: translateY(-16px) rotate(calc(var(--r, 0deg) + 8deg)); }
+    }
+
+    /* Layout wrapper to keep the card centered and above the emoji layer */
+    #yesFull .yesCardWrap{
+      position: relative;
+      z-index: 2;
+      width: min(920px, 92vw);
+    }
+  </style>
+</head>
+
+<body class="bg-main">
+  <canvas id="confetti"></canvas>
+
+  <div class="wrap">
+    <!-- Screen 1: Primary question card -->
+    <div class="card fadeIn" id="screen1" aria-live="polite">
+      <div class="heroEmoji">💘</div>
+      <h1>Для мого чуда 😇💘</h1>
+      <p class="subtitle">Будеш моєю Валентинкою? 🥹</p>
+
+      <!-- Interaction area: provides bounded space for the "No" button movement logic -->
+      <div class="btnRow" id="btnArea">
+        <button class="m-btn" id="yesBtn" type="button">Так 💌</button>
+        <button class="m-btn" id="noBtn" type="button">Ні</button>
+      </div>
+    </div>
+
+    <!-- Legacy placeholder (kept for compatibility; not used in this version) -->
+    <div class="card hidden" id="screen4"></div>
+  </div>
+
+  <!-- YES fullscreen: purple background + emoji layer + card on top -->
+  <section class="hidden" id="yesFull" aria-live="polite">
+    <div class="yesEmoBg" aria-hidden="true">
+      <!-- Inline styles define positions and animation parameters per element -->
+      <span style="left:4%;  top:8%;  --r:-12deg; --d:8.6s; --o:.9;">💖</span>
+      <span style="left:12%; top:18%; --r:8deg;  --d:7.2s; --o:.8;">💋</span>
+      <span style="left:22%; top:10%; --r:-6deg; --d:9.4s; --o:.85;">😘</span>
+      <span style="left:34%; top:16%; --r:12deg; --d:7.7s; --o:.78;">💗</span>
+      <span style="left:46%; top:10%; --r:-14deg;--d:9.1s; --o:.86;">💋</span>
+      <span style="left:58%; top:18%; --r:10deg; --d:8.1s; --o:.8;">💖</span>
+      <span style="left:70%; top:11%; --r:-8deg; --d:8.8s; --o:.86;">😘</span>
+      <span style="left:82%; top:16%; --r:9deg;  --d:7.3s; --o:.78;">💗</span>
+      <span style="left:92%; top:10%; --r:-12deg;--d:9.0s; --o:.82;">💋</span>
+
+      <span style="left:6%;  top:40%; --r:14deg; --d:9.2s; --o:.76;">😘</span>
+      <span style="left:16%; top:54%; --r:-8deg; --d:7.8s; --o:.85;">💖</span>
+      <span style="left:26%; top:42%; --r:10deg; --d:9.6s; --o:.82;">💋</span>
+      <span style="left:38%; top:56%; --r:-12deg;--d:8.3s; --o:.78;">💗</span>
+      <span style="left:50%; top:44%; --r:6deg;  --d:9.1s; --o:.85;">😘</span>
+      <span style="left:62%; top:58%; --r:-10deg;--d:8.0s; --o:.82;">💋</span>
+      <span style="left:74%; top:46%; --r:12deg; --d:9.5s; --o:.8;">💖</span>
+      <span style="left:86%; top:56%; --r:-6deg; --d:8.6s; --o:.85;">😘</span>
+
+      <span style="left:4%;  top:78%; --r:-12deg;--d:9.4s; --o:.82;">💋</span>
+      <span style="left:14%; top:86%; --r:9deg;  --d:8.4s; --o:.78;">💖</span>
+      <span style="left:26%; top:76%; --r:-6deg; --d:9.8s; --o:.86;">💗</span>
+      <span style="left:38%; top:88%; --r:12deg; --d:8.0s; --o:.78;">😘</span>
+      <span style="left:50%; top:78%; --r:-10deg;--d:9.0s; --o:.88;">💖</span>
+      <span style="left:62%; top:88%; --r:8deg;  --d:9.4s; --o:.76;">💋</span>
+      <span style="left:74%; top:78%; --r:-8deg; --d:8.8s; --o:.86;">😘</span>
+      <span style="left:86%; top:88%; --r:10deg; --d:8.2s; --o:.78;">💗</span>
+      <span style="left:94%; top:78%; --r:-12deg;--d:9.7s; --o:.82;">💋</span>
+
+      <span style="left:10%; top:30%; --r:-10deg; --d:8.3s; --o:.74;">💗</span>
+      <span style="left:90%; top:32%; --r:10deg;  --d:9.1s; --o:.74;">💖</span>
+      <span style="left:48%; top:28%; --r:-6deg;  --d:10.0s;--o:.72;">💋</span>
+      <span style="left:52%; top:70%; --r:12deg;  --d:8.9s; --o:.72;">😘</span>
+    </div>
+
+    <div class="yesCardWrap">
+      <div class="card fadeIn">
+        <div class="heroEmoji">🎉💖</div>
+        <h1 style="font-size: clamp(28px, 3.2vw, 46px);">Урааа! Я такий щасливий!</h1>
+        <p class="subtitle">Тепер офіційно: ти моя Валентинка 😘</p>
+
+        <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+          <div style="width:180px;height:220px;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.55);box-shadow:var(--shadow-1);background:rgba(255,255,255,.35);">
+            <img src="images/photo1.jpg" alt="Фото 1" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+          <div style="width:180px;height:220px;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.55);box-shadow:var(--shadow-1);background:rgba(255,255,255,.35);">
+            <img src="images/photo2.jpg" alt="Фото 2" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 2 FULLSCREEN -->
+  <section class="full hidden" id="screen2Full" aria-live="polite">
+    <div class="floatEmo e1">💋</div>
+    <div class="floatEmo e2">💖</div>
+    <div class="floatEmo e3">😘</div>
+    <div class="floatEmo e4">💗</div>
+
+    <div class="fullInner">
+      <div class="emoRowTop">😿 💔 😿</div>
+      <h1 class="fullTitle">Ти серйозно???</h1>
+      <div class="emoRowBottom">💔💔💔</div>
+    </div>
+  </section>
+
+  <!-- Screen 3 FULLSCREEN -->
+  <section class="full hidden" id="screen3Full">
+    <div class="floatEmo e1">💋</div>
+    <div class="floatEmo e2">💖</div>
+    <div class="floatEmo e3">😘</div>
+    <div class="floatEmo e4">💗</div>
+
+    <div class="fullInner">
+      <div class="emoRowTop">😂😂😂</div>
+      <h1 class="fullTitle">ХАХАХА!!!</h1>
+      <p class="fullSub">Як легко повелась!</p>
+      <p class="fullSub nowrap">Думала,&nbsp;я&nbsp;дам&nbsp;тобі&nbsp;таку&nbsp;можливість?!</p>
+      <div class="emoRowBottom">🫵🫵</div>
+    </div>
+  </section>
+
+  <script>
+    /* =========================================================
+       DOM references
+       - Keep access centralized for readability and maintenance
+    ========================================================= */
+    const s1 = document.getElementById('screen1');
+    const s2Full = document.getElementById('screen2Full');
+    const s3Full = document.getElementById('screen3Full');
+    const yesFull = document.getElementById('yesFull');
+
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn  = document.getElementById('noBtn');
+    const btnArea = document.getElementById('btnArea');
+
+    /* Screen timing constants (ms) */
+    const S2_DURATION = 4000;
+    const S3_DURATION = 10000;
+    const YES_DURATION = 7000;
+
+    /* Interaction state for the "No" button behavior */
+    let attempts = 0;
+    let catchable = false;   // becomes true after N attempts (allows click)
+    let autoTimer = null;
+    let noX = null;          // current left position within the button area
+
+    /* Utility: clamp value to a range */
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    /* Toggle global background theme */
+    const setBg = (mode) => {
+      document.body.classList.remove('bg-main', 'bg-orange');
+      document.body.classList.add(mode);
+    };
+
+    /* Re-trigger CSS animation by removing + re-adding the class */
+    const fade = (el) => {
+      el.classList.remove('fadeIn');
+      void el.offsetWidth;
+      el.classList.add('fadeIn');
+    };
+
+    function clearTimers(){
+      if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    }
+
+    /* Show one screen and hide the rest (simple view router) */
+    function showOnly(which){
+      [s1, s2Full, s3Full, yesFull].forEach(el => el.classList.add('hidden'));
+      which.classList.remove('hidden');
+      fade(which);
+    }
+
+    /* Reset "No" button escape state */
+    const resetNo = () => {
+      attempts = 0;
+      catchable = false;
+      noX = null;
+      noBtn.style.right = "0px";
+      noBtn.style.left = "auto";
+    };
+
+    /* Return to the initial card screen */
+    const goHome = () => {
+      clearTimers();
+      stopConfetti();
+      setBg('bg-main');
+      showOnly(s1);
+      resetNo();
+    };
+
+    /* Ripple effect: creates a span positioned at pointer location */
+    function addRipple(e){
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+      const size = Math.max(rect.width, rect.height) * 1.6;
+      const r = document.createElement('span');
+      r.className = 'ripple';
+      r.style.width = r.style.height = size + 'px';
+      r.style.left = (x - size/2) + 'px';
+      r.style.top  = (y - size/2) + 'px';
+
+      btn.appendChild(r);
+      r.addEventListener('animationend', () => r.remove(), { once:true });
+    }
+    [yesBtn, noBtn].forEach(b => b.addEventListener('pointerdown', addRipple));
+
+    /* Initialize "No" absolute positioning using left offset inside btnArea */
+    function ensureNoLeftInitialized(){
+      if (noX !== null) return;
+      const area = btnArea.getBoundingClientRect();
+      const btn  = noBtn.getBoundingClientRect();
+      noX = clamp(area.width - btn.width, 0, area.width - btn.width);
+      noBtn.style.left = `${noX}px`;
+      noBtn.style.right = "auto";
+    }
+
+    /* Move "No" away from pointer position to create playful avoidance */
+    function repelFromPoint(clientX){
+      if (catchable) return;
+
+      ensureNoLeftInitialized();
+
+      const area = btnArea.getBoundingClientRect();
+      const btn  = noBtn.getBoundingClientRect();
+
+      const pointerX = clientX - area.left;
+      const btnCenterX = (noX + btn.width / 2);
+
+      const dir = (btnCenterX >= pointerX) ? 1 : -1;
+      const dist = Math.abs(btnCenterX - pointerX);
+      const proximity = clamp(1 - (dist / area.width), 0, 1);
+
+      /* Step size increases as the pointer gets closer */
+      const baseStep = 150;
+      const step = baseStep * (0.35 + 0.95 * proximity);
+      const jitter = (Math.random() - 0.5) * 18;
+
+      noX = clamp(noX + dir * step + jitter, 0, area.width - btn.width);
+
+      noBtn.style.left = `${noX}px`;
+      noBtn.style.right = "auto";
+    }
+
+    function attemptEscape(clientX){
+      attempts += 1;
+      if (attempts >= 3) { catchable = true; return; }
+      repelFromPoint(clientX);
+    }
+
+    /* Desktop proximity detection */
+    btnArea.addEventListener('mousemove', (e) => {
+      if (catchable) return;
+      const btn = noBtn.getBoundingClientRect();
+      const dx = Math.abs((btn.left + btn.width/2) - e.clientX);
+      if (dx < 190) attemptEscape(e.clientX);
+    });
+
+    /* Hover-based avoidance (desktop + pointer devices) */
+    noBtn.addEventListener('mouseenter', (e) => {
+      if (!catchable) attemptEscape(e.clientX);
+    });
+    noBtn.addEventListener('pointerenter', (e) => {
+      if (!catchable) attemptEscape(e.clientX);
+    });
+
+    /* Touch handling: keep interaction responsive on mobile */
+    btnArea.addEventListener('touchmove', (e) => {
+      if (catchable) return;
+      const t = e.touches[0];
+      if (!t) return;
+      attemptEscape(t.clientX);
+    }, { passive: false });
+
+    noBtn.addEventListener('touchstart', (e) => {
+      if (!catchable) e.preventDefault();
+      const t = e.touches[0];
+      attemptEscape(t ? t.clientX : 0);
+    }, { passive: false });
+
+    /* "No" click: if catchable -> play Screen2/3 sequence, else keep escaping */
+    noBtn.addEventListener('click', (e) => {
+      if (!catchable) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const area = btnArea.getBoundingClientRect();
+        attemptEscape(area.left + area.width / 2);
+        return;
+      }
+
+      clearTimers();
+      stopConfetti();
+
+      setBg('bg-main');
+      showOnly(s2Full);
+
+      autoTimer = setTimeout(() => {
+        setBg('bg-orange');
+        showOnly(s3Full);
+
+        autoTimer = setTimeout(goHome, S3_DURATION);
+      }, S2_DURATION);
+    });
+
+    /* =========================================================
+       Confetti implementation (canvas)
+       - Lightweight particle simulation for short celebration burst
+    ========================================================= */
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    let confettiOn = false;
+    let confettiRAF = null;
+    let confettiEndAt = 0;
+    let pieces = [];
+
+    function resizeCanvas(){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function startConfetti(durationMs = 1700){
+      resizeCanvas();
+      confettiOn = true;
+      confettiEndAt = performance.now() + durationMs;
+      canvas.classList.add('on');
+
+      pieces = [];
+      const count = 130;
+      const palette = ["#3B82F6", "#A855F7", "#F59E0B", "#10B981", "#EF4444"];
+
+      for (let i=0; i<count; i++){
+        pieces.push({
+          x: Math.random() * window.innerWidth,
+          y: -20 - Math.random() * 220,
+          w: 6 + Math.random() * 10,
+          h: 8 + Math.random() * 14,
+          vx: (Math.random() - 0.5) * 2.2,
+          vy: 2.2 + Math.random() * 3.8,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.18,
+          c: palette[Math.floor(Math.random()*palette.length)]
+        });
+      }
+
+      loopConfetti();
+    }
+
+    function stopConfetti(){
+      confettiOn = false;
+      canvas.classList.remove('on');
+      if (confettiRAF) cancelAnimationFrame(confettiRAF);
+      confettiRAF = null;
+      pieces = [];
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+    }
+
+    function loopConfetti(){
+      if (!confettiOn) return;
+
+      const now = performance.now();
+      const fadeOut = Math.max(0, (confettiEndAt - now) / 500);
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+      ctx.globalAlpha = Math.min(1, fadeOut);
+
+      for (const p of pieces){
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.vx *= 0.995;
+
+        /* Recycle particles once they exit the viewport */
+        if (p.y > window.innerHeight + 40){
+          p.y = -20 - Math.random() * 140;
+          p.x = Math.random() * window.innerWidth;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
+
+      if (now >= confettiEndAt){
+        setTimeout(stopConfetti, 200);
+        return;
+      }
+      confettiRAF = requestAnimationFrame(loopConfetti);
+    }
+
+    /* YES click: show fullscreen YES layout + confetti burst, then return home */
+    yesBtn.addEventListener('click', () => {
+      clearTimers();
+
+      setBg('bg-main');
+      showOnly(yesFull);
+
+      startConfetti(1700);
+      autoTimer = setTimeout(goHome, YES_DURATION);
+    });
+
+    /* Initial state */
+    setBg('bg-main');
+    resetNo();
+    showOnly(s1);
+  </script>
+</body>
+</html>
